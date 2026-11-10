@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 
+const RESTAURANT_ADRESSE = "Görlitzer Straße 39 B, 34123 Kassel-Waldau";
+const MAX_LIEFER_KM = 7;
+const MINDESTBESTELLWERT = 20;
+
 const produkte = [
   { id: 1, name: "Döner Hähnchen groß", preis: 7.5, kategorie: "Döner" },
   { id: 2, name: "Döner Kalb groß", preis: 8.0, kategorie: "Döner" },
