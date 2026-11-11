@@ -59,6 +59,10 @@ export default function Home() {
   const [hinweis, setHinweis] = useState("");
   const [vorschau, setVorschau] = useState(false);
   const [bestaetigt, setBestaetigt] = useState(false);
+  
+const [lieferPruefung, setLieferPruefung] = useState(null);
+const [prueftLiefergebiet, setPrueftLiefergebiet] = useState(false);
+
 
   const positionen = useMemo(
     () => produkte.filter((p) => (warenkorb[p.id] || 0) > 0),
@@ -80,6 +84,46 @@ export default function Home() {
       (strasse.trim().length > 0 &&
         plz.trim().length > 0 &&
         ort.trim().length > 0));
+
+async function liefergebietPruefen() {
+  setPrueftLiefergebiet(true);
+  setLieferPruefung(null);
+
+  try {
+    const adresse = `${strasse}, ${plz} ${ort}`;
+
+    const antwort = await fetch("/api/liefergebiet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ adresse })
+    });
+
+    if (!antwort.ok) {
+      throw new Error("Liefergebiet konnte nicht geprüft werden.");
+    }
+
+    const ergebnis = await antwort.json();
+
+    if (typeof ergebnis.lieferbar !== "boolean") {
+      throw new Error("Ungültige Antwort vom Server.");
+    }
+
+    setLieferPruefung(ergebnis);
+    return ergebnis.lieferbar;
+  } catch (fehler) {
+    setLieferPruefung({
+      lieferbar: false,
+      nachricht: "Liefergebiet konnte nicht geprüft werden."
+    });
+    return false;
+  } finally {
+    setPrueftLiefergebiet(false);
+  }
+}
+
+  
 
   function mengeAendern(id, differenz) {
     setWarenkorb((alt) => {
@@ -154,11 +198,30 @@ export default function Home() {
 
           <fieldset style={{ border: 0, padding: 0, marginBottom: 12 }}>
             <legend>Bestellart</legend>
-            <label style={{ marginRight: 12 }}>
-              <input type="radio" name="art" checked={!lieferung} onChange={() => { setArt("Abholung"); setVorschau(false); }} /> Abholung
-            </label>
-            <label>
-              <input type="radio" name="art" checked={lieferung} onChange={() => { setArt("Lieferung"); setVorschau(false); }} /> Lieferung
+           <label style={{ marginRight: 12 }}>
+  <input
+    type="radio"
+    name="art"
+    checked={!lieferung}
+    onChange={() => {
+      setArt("Abholung");
+      setVorschau(false);
+      setLieferPruefung(null);
+    }}
+  /> Abholung
+</label>
+<label>
+  <input
+    type="radio"
+    name="art"
+    checked={lieferung}
+    onChange={() => {
+      setArt("Lieferung");
+      setVorschau(false);
+      setLieferPruefung(null);
+    }}
+  /> Lieferung
+  
             </label>
           </fieldset>
 
@@ -168,14 +231,29 @@ export default function Home() {
             </p>
           )}
 
-          <form onSubmit={(e) => { e.preventDefault(); if (formularGueltig) { setVorschau(true); setBestaetigt(false); } }}>
+          
+<form onSubmit={async (e) => {
+  e.preventDefault();
+  if (!formularGueltig || prueftLiefergebiet) return;
+
+  setVorschau(false);
+  setBestaetigt(false);
+
+  if (lieferung) {
+    const istLieferbar = await liefergebietPruefen();
+    if (!istLieferbar) return;
+  }
+
+  setVorschau(true);
+}}>
+
             <label>Name<input style={feld} required value={name} onChange={(e) => { setName(e.target.value); setVorschau(false); }} /></label>
             <label>Telefonnummer<input style={feld} type="tel" required value={telefon} onChange={(e) => { setTelefon(e.target.value); setVorschau(false); }} /></label>
             {lieferung && (
               <>
-                <label>Straße und Hausnummer<input style={feld} required value={strasse} onChange={(e) => { setStrasse(e.target.value); setVorschau(false); }} /></label>
-                <label>Postleitzahl<input style={feld} required value={plz} onChange={(e) => { setPlz(e.target.value); setVorschau(false); }} /></label>
-                <label>Ort<input style={feld} required value={ort} onChange={(e) => { setOrt(e.target.value); setVorschau(false); }} /></label>
+                <label>Straße und Hausnummer<input style={feld} required value={strasse} onChange={(e) => { setStrasse(e.target.value); setVorschau(false);setLieferPruefung(null); }} /></label>
+                <label>Postleitzahl<input style={feld} required value={plz} onChange={(e) => { setPlz(e.target.value); setVorschau(false);setLieferPruefung(null); }} /></label>
+                <label>Ort<input style={feld} required value={ort} onChange={(e) => { setOrt(e.target.value); setVorschau(false);setLieferPruefung(null); }} /></label>
               </>
             )}
             <label>Sonderwünsche<textarea style={feld} rows={3} value={hinweis} onChange={(e) => { setHinweis(e.target.value); setVorschau(false); }} placeholder="Zum Beispiel: ohne Zwiebeln" /></label>
@@ -183,6 +261,26 @@ export default function Home() {
               Bestellung prüfen
             </button>
           </form>
+{lieferung && prueftLiefergebiet && (
+  <p role="status">Lieferadresse wird geprüft...</p>
+)}
+
+{lieferung && lieferPruefung && !prueftLiefergebiet && (
+  <p
+    role="status"
+    style={{
+      color: lieferPruefung.lieferbar ? "green" : "red",
+      fontWeight: "bold",
+      marginTop: 12
+    }}
+  >
+    {lieferPruefung.nachricht ||
+      (lieferPruefung.lieferbar
+        ? "Lieferung möglich."
+        : "Lieferung nicht möglich.")}
+  </p>
+)}
+
 
           {vorschau && (
             <section style={{ marginTop: 20, padding: 14, background: "#f1f5f9", borderRadius: 10 }}>
