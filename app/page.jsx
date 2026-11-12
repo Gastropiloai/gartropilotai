@@ -82,6 +82,17 @@ const [prueftLiefergebiet, setPrueftLiefergebiet] = useState(false);
     0
   );
   const lieferung = art === "Lieferung";
+  
+const liefergebuehr =
+  lieferung &&
+  lieferPruefung?.lieferbar === true &&
+  typeof lieferPruefung.entfernungKm === "number"
+    ? liefergebuehrBerechnen(lieferPruefung.entfernungKm)
+    : null;
+
+const gesamtpreis =
+  summe + (lieferung ? (liefergebuehr ?? 0) : 0);
+
   const mindestwertErreicht = !lieferung || summe >= 20;
   const formularGueltig =
     anzahl > 0 &&
@@ -300,7 +311,23 @@ async function liefergebietPruefen() {
               <p>{art} · {name} · {telefon}</p>
               {lieferung && <p>{strasse}, {plz} {ort}</p>}
               {hinweis && <p>Hinweis: {hinweis}</p>}
-              <p>Liefergebühr und Liefergebiet sind noch nicht geprüft. Kein verbindlicher Endpreis.</p>
+              
+{lieferung ? (
+  lieferPruefung?.lieferbar === true &&
+  liefergebuehr !== null ? (
+    <>
+      <p>Liefergebühr: {euro(liefergebuehr)}</p>
+      <p>
+        <strong>Gesamtpreis: {euro(gesamtpreis)}</strong>
+      </p>
+    </>
+  ) : (
+    <p>Liefergebühr noch nicht geprüft. Kein verbindlicher Endpreis.</p>
+  )
+) : (
+  <p><strong>Gesamtpreis: {euro(summe)}</strong></p>
+)}
+
               <button type="button" onClick={() => setBestaetigt(true)} style={knopf}>
                 Testbestellung bestätigen
               </button>
