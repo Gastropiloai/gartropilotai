@@ -59,6 +59,9 @@ export default function Home() {
   const [kategorie, setKategorie] = useState("Alle");
   const [warenkorb, setWarenkorb] = useState({});
   const [art, setArt] = useState("Abholung");
+  
+const [tischNummer, setTischNummer] = useState("");
+
   const [name, setName] = useState("");
   const [telefon, setTelefon] = useState("");
   const [strasse, setStrasse] = useState("");
@@ -94,15 +97,21 @@ const gesamtpreis =
   summe + (lieferung ? (liefergebuehr ?? 0) : 0);
 
   const mindestwertErreicht = !lieferung || summe >= 20;
-  const formularGueltig =
-    anzahl > 0 &&
-    name.trim().length > 0 &&
-    telefon.trim().length > 0 &&
-    mindestwertErreicht &&
-    (!lieferung ||
-      (strasse.trim().length > 0 &&
-        plz.trim().length > 0 &&
-        ort.trim().length > 0));
+  
+const formularGueltig =
+  anzahl > 0 &&
+  name.trim().length > 0 &&
+  telefon.trim().length > 0 &&
+  mindestwertErreicht &&
+  (art !== "Im Laden" ||
+    (Number.isInteger(Number(tischNummer)) &&
+      Number(tischNummer) >= 1 &&
+      Number(tischNummer) <= 20)) &&
+  (!lieferung ||
+    (strasse.trim().length > 0 &&
+      plz.trim().length > 0 &&
+      ort.trim().length > 0));
+
 
 async function liefergebietPruefen() {
   setPrueftLiefergebiet(true);
@@ -242,9 +251,45 @@ async function liefergebietPruefen() {
   /> Lieferung
   
             </label>
+      
+<label style={{ marginRight: 12 }}>
+  <input
+    type="radio"
+    name="art"
+    checked={art === "Im Laden"}
+    onChange={() => {
+      setArt("Im Laden");
+      setVorschau(false);
+      setLieferPruefung(null);
+    }}
+  /> Im Laden bestellen
+</label>
+   
           </fieldset>
 
-          {lieferung && !mindestwertErreicht && (
+         
+{art === "Im Laden" && (
+  <label>
+    Tischnummer
+    <select
+      value={tischNummer}
+      onChange={(e) => {
+        setTischNummer(e.target.value);
+        setVorschau(false);
+      }}
+      style={feld}
+      required
+    >
+      <option value="">Bitte Tisch auswählen</option>
+      {Array.from({ length: 20 }, (_, i) => i + 1).map((nr) => (
+        <option key={nr} value={String(nr)}>
+          Tisch {nr}
+        </option>
+      ))}
+    </select>
+  </label>
+)}
+ {lieferung && !mindestwertErreicht && (
             <p role="alert" style={{ color: "#b91c1c" }}>
               Für Lieferung fehlen noch {euro(20 - summe)} zum Mindestbestellwert von 20 €.
             </p>
@@ -309,6 +354,9 @@ async function liefergebietPruefen() {
               ))}
               <p><strong>Warenwert: {euro(summe)}</strong></p>
               <p>{art} · {name} · {telefon}</p>
+             
+{art === "Im Laden" && <p><strong>Tisch {tischNummer} – Zahlung beim Kellner</strong></p>}
+
               {lieferung && <p>{strasse}, {plz} {ort}</p>}
               {hinweis && <p>Hinweis: {hinweis}</p>}
               
@@ -332,19 +380,28 @@ async function liefergebietPruefen() {
 
 <button
   type="button"
-  disabled={
-    lieferung &&
+ disabled={
+  (lieferung &&
     (lieferPruefung?.lieferbar !== true ||
-      liefergebuehr === null)
-  }
-  onClick={() => {
-    if (
-      lieferung &&
+      liefergebuehr === null)) ||
+  (art === "Im Laden" &&
+    (!Number.isInteger(Number(tischNummer)) ||
+      Number(tischNummer) < 1 ||
+      Number(tischNummer) > 20))
+}
+ onClick={() => {
+  if (
+    (lieferung &&
       (lieferPruefung?.lieferbar !== true ||
-        liefergebuehr === null)
-    ) return;
-    setBestaetigt(true);
-  }}
+        liefergebuehr === null)) ||
+    (art === "Im Laden" &&
+      (!Number.isInteger(Number(tischNummer)) ||
+        Number(tischNummer) < 1 ||
+        Number(tischNummer) > 20))
+  ) return;
+
+  setBestaetigt(true);
+}}
   style={knopf}
 >
 
