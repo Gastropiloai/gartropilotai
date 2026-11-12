@@ -328,7 +328,27 @@ async function liefergebietPruefen() {
   <p><strong>Gesamtpreis: {euro(summe)}</strong></p>
 )}
 
-              <button type="button" onClick={() => setBestaetigt(true)} style={knopf}>
+             
+
+<button
+  type="button"
+  disabled={
+    lieferung &&
+    (lieferPruefung?.lieferbar !== true ||
+      liefergebuehr === null)
+  }
+  onClick={() => {
+    if (
+      lieferung &&
+      (lieferPruefung?.lieferbar !== true ||
+        liefergebuehr === null)
+    ) return;
+    setBestaetigt(true);
+  }}
+  style={knopf}
+>
+
+
                 Testbestellung bestätigen
               </button>
               {bestaetigt && (
