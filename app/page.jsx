@@ -230,7 +230,9 @@ async function liefergebietPruefen() {
   <input
     type="radio"
     name="art"
-    checked={!Abholung}
+    
+checked={art === "Abholung"}
+
     onChange={() => {
       setArt("Abholung");
       setVorschau(false);
