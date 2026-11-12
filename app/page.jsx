@@ -6,6 +6,14 @@ const RESTAURANT_ADRESSE = "Görlitzer Straße 39 B, 34123 Kassel-Waldau";
 const MAX_LIEFER_KM = 7;
 const MINDESTBESTELLWERT = 20;
 
+const liefergebuehrBerechnen = (km) => {
+  if (km <= 2) return 2;
+  if (km <= 4) return 3;
+  if (km <= 5) return 4;
+  if (km <= 7) return 5;
+  return null;
+};
+
 const produkte = [
   { id: 1, name: "Döner Hähnchen groß", preis: 7.5, kategorie: "Döner" },
   { id: 2, name: "Döner Kalb groß", preis: 8.0, kategorie: "Döner" },
