@@ -24,7 +24,7 @@ export async function POST(request) {
         table_number: body.table_number ?? null,
         items: body.items,
         total_amount: body.total_amount,
-        status: "neu",
+        status: "Neu",
         customer_name: body.customer_name ?? null,
         customer_phone: body.customer_phone ?? null
       }])
