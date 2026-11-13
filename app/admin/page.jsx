@@ -1,6 +1,7 @@
 
 "use client";
-
+Auth kommt gleich
+// Supabase-Login folgt im nächsten Schritt
 import { useState } from "react";
 
 const demoOrders = [
