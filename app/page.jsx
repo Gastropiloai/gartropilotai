@@ -391,7 +391,7 @@ checked={art === "Abholung"}
       Number(tischNummer) < 1 ||
       Number(tischNummer) > 20))
 }
- onClick={() => {
+onClick={async () => {
   if (
     (lieferung &&
       (lieferPruefung?.lieferbar !== true ||
@@ -402,7 +402,43 @@ checked={art === "Abholung"}
         Number(tischNummer) > 20))
   ) return;
 
+ 
+try {
+  const antwort = await fetch("/api/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      order_type: art,
+      table_number: art === "Im Laden" ? Number(tischNummer) : null,
+      items: positionen.map((p) => ({
+        id: p.id,
+        name: p.name,
+        quantity: warenkorb[p.id],
+        price: p.preis
+      })),
+      total_amount: gesamtpreis,
+      customer_name: name,
+      customer_phone: telefon
+    })
+  });
+
+  if (!antwort.ok) {
+    throw new Error("Bestellung konnte nicht gespeichert werden.");
+  }
+
+  const ergebnis = await antwort.json();
+
+  if (!ergebnis.success) {
+    throw new Error("Speicherung fehlgeschlagen.");
+  }
+
   setBestaetigt(true);
+} catch (fehler) {
+  alert("Fehler: " + fehler.message);
+}
+
 }}
   style={knopf}
 >
@@ -411,7 +447,9 @@ checked={art === "Abholung"}
                 Testbestellung bestätigen
               </button>
               {bestaetigt && (
-                <p role="status"><strong>Demo erfolgreich durchgespielt.</strong> Es wurde keine Bestellung gesendet, gespeichert oder bezahlt.</p>
+               
+<p role="status"><strong>Bestellung erfolgreich gespeichert!</strong> Deine Bestellung wurde an unser System übermittelt.</p>
+
               )}
             </section>
           )}
